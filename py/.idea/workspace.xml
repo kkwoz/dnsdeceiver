@@ -2,15 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d075f7d6-208f-491f-b2a5-a12dfae67922" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dnsdeceiver/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dnsdeceiver/arpspoofer.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dnsdeceiver/dnsdeceiver.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dnsdeceiver/dnsspoofer.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dnsdeceiver/test_getHwAddr.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dnsdeceiver/utils.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../src/main.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../main.c" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/py.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/py.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dnsdeceiver/arpspoofer.py" beforeDir="false" afterPath="$PROJECT_DIR$/dnsdeceiver/arpspoofer.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -28,8 +22,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/dnsdeceiver/arpspoofer.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1245">
-              <caret line="89" column="12" lean-forward="true" selection-start-line="89" selection-start-column="12" selection-end-line="89" selection-end-column="12" />
+            <state relative-caret-position="680">
+              <caret line="102" column="16" selection-start-line="102" selection-start-column="16" selection-end-line="102" selection-end-column="16" />
               <folding>
                 <element signature="e#79#89#0" expanded="true" />
               </folding>
@@ -45,7 +39,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/dnsdeceiver/dnsdeceiver.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-55">
+            <state relative-caret-position="570">
               <caret line="38" column="8" selection-start-line="38" selection-start-column="8" selection-end-line="38" selection-end-column="8" />
               <folding>
                 <element signature="e#79#89#0" expanded="true" />
@@ -74,8 +68,8 @@
         <option value="$PROJECT_DIR$/README.md" />
         <option value="$PROJECT_DIR$/dnsdeceiver/dnsdeceiver.py" />
         <option value="$PROJECT_DIR$/dnsdeceiver/test_getHwAddr.py" />
-        <option value="$PROJECT_DIR$/dnsdeceiver/arpspoofer.py" />
         <option value="$PROJECT_DIR$/dnsdeceiver/utils.py" />
+        <option value="$PROJECT_DIR$/dnsdeceiver/arpspoofer.py" />
       </list>
     </option>
   </component>
@@ -103,6 +97,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -124,11 +119,11 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="ASKED_SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
@@ -239,16 +234,18 @@
       <workItem from="1555753901541" duration="9268000" />
       <workItem from="1555872747754" duration="1694000" />
       <workItem from="1556187289438" duration="6296000" />
+      <workItem from="1556268722579" duration="5104000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="17394000" />
+    <option name="totallyTimeSpent" value="22498000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="39" width="1920" height="1041" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.1119403" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.1130064" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -290,19 +287,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/dnsdeceiver/dnsspoofer.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/dnsdeceiver/dnsdeceiver.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-55">
-          <caret line="38" column="8" selection-start-line="38" selection-start-column="8" selection-end-line="38" selection-end-column="8" />
-          <folding>
-            <element signature="e#79#89#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_bundle/pydev_import_hook.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="270">
@@ -330,10 +314,23 @@
     <entry file="file://$PROJECT_DIR$/dnsdeceiver/__init__.py">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
+    <entry file="file://$PROJECT_DIR$/dnsdeceiver/dnsdeceiver.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="570">
+          <caret line="38" column="8" selection-start-line="38" selection-start-column="8" selection-end-line="38" selection-end-column="8" />
+          <folding>
+            <element signature="e#79#89#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dnsdeceiver/dnsspoofer.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
     <entry file="file://$PROJECT_DIR$/dnsdeceiver/arpspoofer.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1245">
-          <caret line="89" column="12" lean-forward="true" selection-start-line="89" selection-start-column="12" selection-end-line="89" selection-end-column="12" />
+        <state relative-caret-position="680">
+          <caret line="102" column="16" selection-start-line="102" selection-start-column="16" selection-end-line="102" selection-end-column="16" />
           <folding>
             <element signature="e#79#89#0" expanded="true" />
           </folding>
