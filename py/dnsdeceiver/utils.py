@@ -42,7 +42,7 @@ def arpping(ip):
     :param ip: string - ip address of target host
     :return: string - mac address of target host
     """
-    ans, unans = scapy.all.arping(ip)
+    ans, unans = scapy.all.arping(ip, verbose=0)
     for s,r in ans:
         return r[scapy.all.Ether].src
 
