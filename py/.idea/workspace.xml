@@ -2,9 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d075f7d6-208f-491f-b2a5-a12dfae67922" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/py.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/py.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dnsdeceiver/dnsspoofer.py" beforeDir="false" afterPath="$PROJECT_DIR$/dnsdeceiver/dnsspoofer.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -35,8 +32,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/dnsdeceiver/dnsspoofer.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="305">
-              <caret line="44" column="12" selection-start-line="44" selection-start-column="12" selection-end-line="44" selection-end-column="12" />
+            <state relative-caret-position="185">
+              <caret line="37" column="27" selection-start-line="37" selection-start-column="27" selection-end-line="37" selection-end-column="27" />
               <folding>
                 <element signature="e#79#89#0" expanded="true" />
               </folding>
@@ -47,7 +44,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/dnsdeceiver/dnsdeceiver.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="510">
+            <state relative-caret-position="570">
               <caret line="38" column="8" selection-start-line="38" selection-start-column="8" selection-end-line="38" selection-end-column="8" />
               <folding>
                 <element signature="e#79#89#0" expanded="true" />
@@ -253,12 +250,12 @@
       <workItem from="1556268722579" duration="5104000" />
       <workItem from="1556358993044" duration="8526000" />
       <workItem from="1556572072002" duration="8000" />
-      <workItem from="1556572097804" duration="4191000" />
+      <workItem from="1556572097804" duration="4633000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="35223000" />
+    <option name="totallyTimeSpent" value="35665000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="39" width="1920" height="1041" extended-state="6" />
@@ -346,7 +343,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/dnsdeceiver/dnsdeceiver.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="510">
+        <state relative-caret-position="570">
           <caret line="38" column="8" selection-start-line="38" selection-start-column="8" selection-end-line="38" selection-end-column="8" />
           <folding>
             <element signature="e#79#89#0" expanded="true" />
@@ -356,8 +353,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/dnsdeceiver/dnsspoofer.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="305">
-          <caret line="44" column="12" selection-start-line="44" selection-start-column="12" selection-end-line="44" selection-end-column="12" />
+        <state relative-caret-position="185">
+          <caret line="37" column="27" selection-start-line="37" selection-start-column="27" selection-end-line="37" selection-end-column="27" />
           <folding>
             <element signature="e#79#89#0" expanded="true" />
           </folding>

