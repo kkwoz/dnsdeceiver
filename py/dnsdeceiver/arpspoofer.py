@@ -18,7 +18,7 @@ import utils
 
 logger = logging.getLogger("ARPSPOOFER")
 logger.setLevel(logging.DEBUG)
-fh = logging.StreamHandler()
+fh = logging.FileHandler('dnsdeceiver.log')
 formatter = logging.Formatter("%(name)s; %(asctime)s; %(levelname)s; %(message)s", "%Y-%m-%d %H:%M:%S")
 fh.setFormatter(formatter)
 logger.addHandler(fh)
@@ -35,8 +35,10 @@ class ARPspoofer(threading.Thread):
     to spoof ARP responses only for a specific target. Another
     option is to spoof whole ARP traffic in the network.
     """
-    def __init__(self, queue, config={}):
+    def __init__(self, event, queue, config={}):
         """"""
+        threading.Thread.__init__(self)
+        self.event = event
         '''
         self.kernel_ipv4fwd = None
         '''
@@ -58,7 +60,6 @@ class ARPspoofer(threading.Thread):
 
     def __config_load(self, config={}):
         """"""
-        '''
         self.kernel_ipv4fwd = config.get('kernel_ip4_fwd', 1)
         if self.kernel_ipv4fwd:
             logger.warning("Used kernel ipv4 forwarding feature.")
@@ -67,8 +68,6 @@ class ARPspoofer(threading.Thread):
 
         else:
             logger.error("Not implemented!")
-            raise NotImplementedError
-        '''
 
         self.gw = config.get('gateway', None)
         if not self.gw:
@@ -105,10 +104,7 @@ class ARPspoofer(threading.Thread):
 
         elif len(cmd) == 1:
 
-            if cmd[0].strip() == 's':
-                logger.debug('Stopping...')
-
-            elif cmd[0].strip() == 'p':
+            if cmd[0].strip() == 'p':
                 logger.debug('Pausing...')
 
             elif cmd[0].strip() == 'r':
@@ -134,19 +130,15 @@ class ARPspoofer(threading.Thread):
             logger.critical('Unknown command!')
             raise AttributeError
 
-
-    def __get_commands(self):
-        while not self.queue.empty():
-            cmd = q.get()
-            self.__execute_cmd(cmd)
-
-
     def __spoof_loop(self):
         try:
-            while True:
+            while not self.event.is_set():
                 logger.debug('Iterating...')
 
-                self.__get_commands()
+                while self.queue.empty():
+                    cmd = q.get()
+                    logger.debug('New command: {}'.format(cmd))
+                    self.__execute_cmd(cmd)
 
                 for t in self.targets:
                     if t not in self.ip_mac:
@@ -154,7 +146,7 @@ class ARPspoofer(threading.Thread):
                         self.ip_mac[t] = mac
 
                 self.__spoof()
-                time.usleep(10)
+                time.sleep(0.10)
         except KeyboardInterrupt:
             logger.info('Exiting...')
 
@@ -166,7 +158,6 @@ class ARPspoofer(threading.Thread):
 
     def __del__(self):
         """"""
-        '''
         try:
             if self.kernel_ipv4fwd:
                 self.kernel_ipv4fwd = 0
@@ -174,12 +165,13 @@ class ARPspoofer(threading.Thread):
                 logger.info("Kernel IPv4 forwarding disabled")
         except AttributeError:
             pass
-        '''
+
 
 
 if __name__ == '__main__':
     q = queue.Queue()
-    q.put(['a', '192.168.0.12'])
-    AS = ARPspoofer(q)
+    q.put(['a', '192.168.0.16'])
+    e = threading.Event()
+    AS = ARPspoofer(event=e, queue=q)
     AS.run()
     logger.critical('Quiting arpspoofer')

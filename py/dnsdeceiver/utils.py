@@ -7,7 +7,19 @@ __licence__ = 'GPLv2'
 import socket
 import fcntl
 import struct
+import toml
 import scapy.all
+
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 
 def getHwAddr(ifname):
@@ -45,6 +57,23 @@ def arpping(ip):
     ans, unans = scapy.all.arping(ip, verbose=0)
     for s,r in ans:
         return r[scapy.all.Ether].src
+
+
+class ConfigParser():
+    @staticmethod
+    def load_config(fn):
+        """
+        Utils function loading TOML config file and returning dictionary
+        :param fn:
+        :return:
+        """
+        toml_file = None
+        with open(fn, 'r') as f:
+            toml_file = toml.loads(f.read())
+
+        return toml_file
+
+
 
 
 if __name__ == '__main__':
