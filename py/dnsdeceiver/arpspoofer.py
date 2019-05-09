@@ -134,9 +134,8 @@ class ARPspoofer(threading.Thread):
         try:
             while not self.event.is_set():
                 logger.debug('Iterating...')
-
-                while self.queue.empty():
-                    cmd = q.get()
+                while not self.queue.empty() and not self.event.is_set():
+                    cmd = self.queue.get()
                     logger.debug('New command: {}'.format(cmd))
                     self.__execute_cmd(cmd)
 
@@ -148,24 +147,22 @@ class ARPspoofer(threading.Thread):
                 self.__spoof()
                 time.sleep(0.10)
         except KeyboardInterrupt:
-            logger.info('Exiting...')
+            logger.info('Exiting by KeyboardInterrupt')
+        finally:
+            print("arpspoofer exiting!")
 
     def run(self):
         self.__spoof_loop()
-
-    def __restore_network(self):
-        pass
-
-    def __del__(self):
-        """"""
         try:
             if self.kernel_ipv4fwd:
                 self.kernel_ipv4fwd = 0
-                os.system("echo {} > /proc/sys/net/ipv4/ip_forward".format(self.kernel_ipv4fwd))
-                logger.info("Kernel IPv4 forwarding disabled")
+                os.system("echo 0 > /proc/sys/net/ipv4/ip_forward")
         except AttributeError:
             pass
+        return
 
+    def __restore_network(self):
+        pass
 
 
 if __name__ == '__main__':

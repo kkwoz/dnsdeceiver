@@ -5,6 +5,7 @@ __licence__ = 'GPLv2'
 
 import logging
 import cmd
+import sys
 import queue
 import threading
 import argparse
@@ -176,13 +177,14 @@ class DNSDeceiver_shell(cmd.Cmd):
         """Gracefully shutdown utility: exit"""
         self.do_close(args)
 
+    def do_list_threads(self, args):
+        """List all active threads (for debug only)"""
+        for i in threading.enumerate():
+            print(i)
+
     def do_close(self, args=None):
         """Gracefully shutdown utility: close"""
         logger.critical('Exiting...')
-        self.clean_mess()
-        return True
-
-    def clean_mess(self):
         logger.info('Signaling the end of DNSspoofer execution...')
         logger.info('Signaling the end of ARPspoofer execution...')
         self.quit_event.set()
@@ -191,11 +193,13 @@ class DNSDeceiver_shell(cmd.Cmd):
             self.dnsspoofer.join()
         except RuntimeError:
             pass
+        logger.info("DNSspoofer joined!")
         try:
             self.arpspoofer.join()
         except RuntimeError:
             pass
-        print('EXITING!')
+        logger.info("ARPspoofer joined!")
+        sys.exit(-1)
 
     def __parse(self, arg):
         'Convert a series of zero or more numbers to an argument tuple'
@@ -221,6 +225,6 @@ if __name__ == '__main__':
     logger.debug('{}'.format(args))
     dd = DNSDeceiver_shell(args)
     try:
-        dd.cmdloop()
+       dd.cmdloop()
     except KeyboardInterrupt:
-        dd.do_close()
+        pass
