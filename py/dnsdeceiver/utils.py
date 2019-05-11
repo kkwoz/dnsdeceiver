@@ -9,6 +9,7 @@ import fcntl
 import struct
 import toml
 import scapy.all
+import ipaddress
 
 
 class bcolors:
@@ -59,6 +60,21 @@ def arpping(ip):
         return r[scapy.all.Ether].src
 
 
+def get_hosts(ip):
+    """
+    Utils function calculating all hosts addresses in the specified network
+    :param ip: IP addr with subnet ip/sub notation
+    :return: list of hosts (strings) in the network
+    """
+    hosts = []
+    net = ipaddress.IPv4Network(ip)
+    for h in list(net.hosts()):
+        # print(h)
+        hosts.append(str(h))
+
+    return hosts
+
+
 class ConfigParser():
     @staticmethod
     def load_config(fn):
@@ -68,15 +84,21 @@ class ConfigParser():
         :return:
         """
         toml_file = None
+        conf = {}
         with open(fn, 'r') as f:
             toml_file = toml.loads(f.read())
 
+
         return toml_file
-
-
 
 
 if __name__ == '__main__':
     print(getHwAddr('wlp3s0'))
     print(getHwAddr('enp0s31f6'))
+    print(arpping('192.168.0.1'))
+    print(arpping('192.168.0.19'))
+    conf = ConfigParser().load_config("config.toml")
+    print(conf)
+    hosts = get_hosts("192.168.0.0/24")
+    #print(hosts)
     # print(getHwAddr('eth0'))

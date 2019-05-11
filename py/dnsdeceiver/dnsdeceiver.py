@@ -47,11 +47,18 @@ class DNSDeceiver_shell(cmd.Cmd):
 
         logger.info('Reading config...')
         self.config = utils.ConfigParser.load_config(args.config) if args.config is not None else config
+        print(config)
 
         if 'arp' not in self.config.keys():
             self.config['arp'] = {}
         if 'dns' not in self.config.keys():
             self.config['dns'] = {}
+
+        if 'target' not in self.config['dns'].keys():
+            self.config['dns']['target'] = {}
+
+        if 'target' not in self.config['arp'].keys():
+            self.config['arp']['target'] = {}
 
         logger.info('Initializing ARPspoofer...')
         self.arpspoofer = arpspoofer.ARPspoofer(event=self.quit_event, queue=self.arp_queue, config=self.config['arp'])
@@ -68,6 +75,7 @@ class DNSDeceiver_shell(cmd.Cmd):
         self.dnsspoofer.start()
 
         logger.info('Running normal console now, use wisely!')
+
 
     def __send_to_arpspoofer(self, cmd):
         """
@@ -149,21 +157,12 @@ class DNSDeceiver_shell(cmd.Cmd):
                 self.arp_queue.put(c)
                 continue
 
-    def do_stop_arp_poisoning(self, args):
-        """Stop ARP poisoning"""
-        pass
-
-    def do_start_arp_poisoning(self, args):
-        """Start ARP poisoning"""
-        pass
-
-    def do_start_dns_spoofing(self, args):
-        """Start spoofing dns"""
-        pass
-
-    def do_stop_dns_spoofing(self, args):
-        """Stop spoofing dsn"""
-        pass
+    def do_add_arp(self, args):
+        """Add new targets to ARP spoofer"""
+        _CMD_ = "a"
+        args = self.__parse(args)
+        args = (_CMD_,)+args
+        self.__send_to_arpspoofer(args)
 
     def do_quit(self, args):
         """Gracefully shutdown utility: quit"""
@@ -203,7 +202,7 @@ class DNSDeceiver_shell(cmd.Cmd):
 
     def __parse(self, arg):
         'Convert a series of zero or more numbers to an argument tuple'
-        return tuple(map(int, arg.split()))
+        return tuple(arg)
 
 
 if __name__ == '__main__':
@@ -212,7 +211,7 @@ if __name__ == '__main__':
         description='Small tool to spoof/edit DNS responses using ARP spoofing.',
         epilog='Handle with care!'
     )
-    ap.add_argument('-f', '--config', help="config TOML file", default=None, metavar="config.toml")
+    ap.add_argument('-f', '--config', help="config TOML file", default="config.toml", metavar="config.toml")
     ap.add_argument('-d', '--dns', help="List of DNS queries (comma-separated) to be spoofed (addr:spoofed pairs)",
                     default=None, nargs="*", metavar="site.pl:evil_site.pl")
     ap.add_argument(

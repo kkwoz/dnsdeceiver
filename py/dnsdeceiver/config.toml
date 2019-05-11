@@ -1,0 +1,10 @@
+[arp]
+target = ["192.168.0.11"]
+gateway = "192.168.0.1"
+network = '192.168.0.0/24'
+
+[dns]
+    [dns.target]
+    "foxtrotlabs.cc" = "192.168.0.15"
+    "gynvael.coldwind.pl" = "192.168.0.15"
+    "wp.pl" = "192.168.0.15"

