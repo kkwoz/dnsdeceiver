@@ -95,8 +95,8 @@ class ConfigParser():
 if __name__ == '__main__':
     print(getHwAddr('wlp3s0'))
     print(getHwAddr('enp0s31f6'))
-    print(arpping('192.168.0.1'))
-    print(arpping('192.168.0.19'))
+    print(".1: {}".format(arpping('192.168.0.1')))
+    print(".11 {}".format(arpping('192.168.0.11')))
     conf = ConfigParser().load_config("config.toml")
     print(conf)
     hosts = get_hosts("192.168.0.0/24")
