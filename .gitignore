@@ -1,6 +1,8 @@
 # Prerequisites
 *.d
 *.pyc
+__cache__
+.log
 # Object files
 *.o
 *.ko
