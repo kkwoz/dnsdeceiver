@@ -45,9 +45,12 @@ class DNSDeceiver_shell(cmd.Cmd):
         self.arp_queue = queue.Queue()
         self.quit_event = threading.Event()
 
+
+
+        self.iface = args.interface
+
         logger.info('Reading config...')
         self.config = utils.ConfigParser.load_config(args.config) if args.config is not None else config
-        print(config)
 
         if 'arp' not in self.config.keys():
             self.config['arp'] = {}
@@ -59,6 +62,21 @@ class DNSDeceiver_shell(cmd.Cmd):
 
         if 'target' not in self.config['arp'].keys():
             self.config['arp']['target'] = {}
+
+        print(self.config)
+        if self.iface is None:
+            if 'attack' in self.config:
+                if 'interface' in self.config['attack']:
+                    self.iface = self.config['attack']['interface']
+                else:
+                    logger.critical('Interface not specified!')
+                    sys.exit(-1)
+            else:
+                logger.critical('Interface not specified (lack of attack section)!')
+                sys.exit(-1)
+
+        self.config['arp']['iface'] = self.iface
+        self.config['dns']['iface'] = self.iface
 
         logger.info('Initializing ARPspoofer...')
         self.arpspoofer = arpspoofer.ARPspoofer(event=self.quit_event, queue=self.arp_queue, config=self.config['arp'])
@@ -211,6 +229,8 @@ if __name__ == '__main__':
         description='Small tool to spoof/edit DNS responses using ARP spoofing.',
         epilog='Handle with care!'
     )
+
+    ap.add_argument('-i', '--interface', help="interface", metavar="IFACE", default=None)
     ap.add_argument('-f', '--config', help="config TOML file", default="config.toml", metavar="config.toml")
     ap.add_argument('-d', '--dns', help="List of DNS queries (comma-separated) to be spoofed (addr:spoofed pairs)",
                     default=None, nargs="*", metavar="site.pl:evil_site.pl")
@@ -219,6 +239,7 @@ if __name__ == '__main__':
         help="List of IP addresses (comma-separated) to be attacked via ARP spoofing (0.0.0.0 for whole network)",
         default="0.0.0.0", nargs='*', metavar="IP"
     )
+
 
     args = ap.parse_args()
     logger.debug('{}'.format(args))

@@ -8,3 +8,6 @@ network = '192.168.0.0/24'
     "foxtrotlabs.cc" = "192.168.0.15"
     "gynvael.coldwind.pl" = "192.168.0.15"
     "wp.pl" = "192.168.0.15"
+
+[attack]
+interface = "wlp3s0"
