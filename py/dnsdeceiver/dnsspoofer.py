@@ -48,6 +48,7 @@ class DNSSpoofer(threading.Thread):
 
     def callback(self, packet):
         logger.critical("HIT!")
+        print('HIT')
         if self.event.is_set():
             return
 
@@ -128,7 +129,9 @@ class DNSSpoofer(threading.Thread):
     @staticmethod
     def __run_threaded(q):
         try:
-            q.run(False)  # Main loop
+            print('Starting DNS deceiver!')
+            q.run()  # Main loop
+            print('Finishing!')
         except:
             msg = "Hard error occured! {}".format(e)
             logger.critical(msg)
@@ -139,20 +142,21 @@ class DNSSpoofer(threading.Thread):
         # This is the intercept
         q = NetfilterQueue()
         q.bind(1, self.callback)
-        #t = threading.Thread(target=self.__run_threaded, args=(q,))
-        # t.daemon = True
-        # t.start()
+        t = threading.Thread(target=self.__run_threaded, args=(q,))
+        t.daemon = True
+        t.start()
         while not self.event.is_set():
             self.configurator()
-            try:
-                q.run()  # Main loop
-            except:
-                msg = "Hard error occured! {}".format(e)
-                logger.critical(msg)
-                print(msg)
-            finally:
-                q.unbind()
+            #try:
+            #    q.run(False)  # Main loop
+            #except:
+            #    msg = "Hard error occured! {}".format(e)
+            #    logger.critical(msg)
+            #    print(msg)
+            #finally:
+
         print("DNSspoofer finishing!")
+        q.unbind()
         try:
             logger.debug('Reverting iptables rules!')
             os.system(_iptablesrm_)

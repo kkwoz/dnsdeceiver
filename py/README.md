@@ -91,4 +91,43 @@ Asciiart graph (coz everything with asciiart has more awesome phrack-like experi
 
 ### Commandline interface
 
-TBA
+Dnsdecever provides handy interactive shell for real-time operations. No need to perform DNS spoofing on specified domain? Ok, just restart the utility... ?! NOPE! To avoid an reARPing operation all changes can be done runtime. 
+
+
+```
+Deceiver shell! Type help or ? to list commands.
+
+>help
+
+Documented commands (type help <topic>):
+========================================
+ad       add_dns  exit  ld        list_dns      q     rd    
+add_arp  close    help  list_arp  list_threads  quit  rm_dns
+```
+
+#### Commands
+
+`normal`
+* `exit` - gracefully shutdown the utility (also `quit`, `q` and `close`). This command shuts down the dnsdeceiver, restores ARP tables (performs reARPing of the network) and removes IP tables config!
+* `norearp [OPT]` where OPT is in (1, 0). Set bit tells the program to perform reARPing of the network right before shutdown. Disabled option quits faster, but incorrect ARP settings are left. 
+
+`[arp]`
+
+* `add_arp [IP]` - adding a new target to arpspoofer
+* `rm_arp [IP]` - removing an old target from the arpspoofer
+* `list_arp` - performing ls operation on arp targets (i.e. listing arp targets)
+
+`[dns]`
+
+* `add_dns [domain]:[IP]` - adding a new domain target
+* `rm_dns [domain]` - removing an old domain target
+* `list_dns` - performing ls operation on dns targets (i.e. listing dns targets)
+
+`utility` (mostly debugging)
+
+* `list_threads` - list threads run by the utility.
+
+### Standalone ARPspoofer
+
+Script called `arpspoofer.py` may be used as a tool for yet another network attack that uses ARP spoofing. To invoke it, simply call `arpspoofer.py`. Check `-h` for more options.
+
