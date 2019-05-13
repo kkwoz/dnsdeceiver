@@ -139,9 +139,11 @@ class ARPspoofer(threading.Thread):
         :return: None
         """
         global counter
-        for ip, mac in self.ip_mac.items():
+        for ip in self.targets:
             if ip == self.gw:
-                pass
+                continue
+
+            mac = self.ip_mac[ip]
             # Ether(dst=V_MAC) / ARP(psrc=GW_IP, pdst=V_IP, hwdst=V_MAC)
             # pkt = Ether(dst=mac) / ARP(op=2, pdst=ip, psrc=self.gw, hwdst=mac)
             # send(ARP(op = 2, pdst = routerIP, psrc = victimIP, hwdst = "ff:ff:ff:ff:ff:ff", hwsrc= victimMAC), count = 4)
@@ -268,7 +270,7 @@ class ARPspoofer(threading.Thread):
     def run(self):
         """
         Run method overrides threading.run method for parallel execution.
-        :return:
+        :return: None
         """
         self.__spoof_loop()
         try:
@@ -277,13 +279,10 @@ class ARPspoofer(threading.Thread):
             pass
         return
 
-    def __restore_network(self):
-        pass
-
 
 if __name__ == '__main__':
     q = queue.Queue()
-    q.put(['a', '192.168.0.16'])
+    q.put(['a', '192.168.0.11'])
     e = threading.Event()
     AS = ARPspoofer(event=e, queue=q)
     AS.run()
