@@ -26,6 +26,8 @@ DEFAULT_GATEWAY = '192.168.0.1'
 DEFAULT_NETWORK = "192.168.0.0/24"
 REARP_VAL = 10
 INTERVAL = 10
+
+# global variable
 counter = 0
 
 
