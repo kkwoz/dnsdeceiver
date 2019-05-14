@@ -1,6 +1,6 @@
 ### DNS Deceiver
 
-Python version of ARP-spoofing tool with blackjack and hook..s. Created as my uni project. 
+Python version of an ARP-spoofing tool with blackjack and hook..s. Created as my uni project. 
 
 ### Installation
 
@@ -63,30 +63,30 @@ network = '192.168.0.0/24'
 interface = "interface"
 ```
 
-`[arp]` section is provides options to configure arp-spoofing attack. 
+`[arp]` section provides options to configure the arp-spoofing attack. 
 * target array specifies targets to be spoofed using ARP packets
-* gateway sets the IP addr of the gateway
-* network sets the netwrok address with the mask. This setting is handy when target list is emtpy/not provided. This script will then manually check all the hosts using self-implemented arpping utility 
+* gateway sets the IP address of the gateway
+* network sets the network address with the mask. This setting is handy when the target list is empty/not provided. This script will then automatically check all the hosts using self-implemented arpping utility 
 
-`[dns]` section configures mapping to be applied when spoofing DNS responses. In `[dns.target]` targets are specified with `key = value` entries, where key is the domain to be spoofed and domain value holds the IP address to be put into DNS response. 
+`[dns]` section configures mapping to be applied when spoofing DNS responses. In `[dns.target]` targets are specified with `key = value` entries, where the key is the domain to be spoofed and the domain value holds the IP address to be put into the DNS response. 
 
-`[attack]` section is used to configure settings of attacker machine. The only needed value is the `interface` wich specifies which interface should be used to run the attack. 
+`[attack]` section configures settings of the attacker machine. The only required value is `interface` which specifies which interface should be used to run the attack. 
 
 
 ### How it works
 
-DNS-spoofing is a very simple attack. The attacker sniffs incoming DNS responses and spoofs the IP address of queried domain.  
-To receive DNS queries sent by the victim machine, the attacker has to redirect whole traffic via his/her controlled machine. That's why DNS spoofing attacks are usually conducted over conducted ARP spoofing attack.
+DNS-spoofing is a very simple attack. The attacker sniffs incoming DNS responses and spoofs the IP address of the queried domain.  
+To receive DNS queries sent by the victim machine, the attacker has to redirect the whole traffic via their controlled machine. That is why DNS-spoofing attacks are usually conducted over ARP-spoofing attacks.
 
-The ARP spoofing attack is yet another trivial computer network attack. The attacker has to put himself/herself in the middle of communication between gateway and the victim host. This can be done by poisoning ARP tables on both machines. 
+ARP-spoofing is yet another trivial computer network attack. The attacker has to put themselves in the middle of the communication between the gateway and the victim host. This can be done by poisoning ARP tables on both machines. 
 
-It is achieved by sending fake ARP responses (not requested!) to the network. Incomming information will be used to overwrite nonstatic entry in the ARP table. In other words: the attackers tells the victiom "Hi, my name is YourRouter". And the gateway gets very similar message "Hi there, my name is Victim".   
+It is achieved by sending fake ARP responses (not requested!) to the network. Incoming information will be used to overwrite nonstatic entries in the ARP table. In other words: the attacker tells the victim "Hi, my name is YourRouter". And the gateway gets a very similar message - "Hi there, my name is Victim".   
 Of course by filling corresponding fields in the ARP packet. 
 
 
-### Commandline interface
+### Command-line interface
 
-Dnsdecever provides handy interactive shell for real-time operations. No need to perform DNS spoofing on specified domain? Ok, just restart the utility... ?! NOPE! To avoid an reARPing operation all changes can be done runtime. 
+Dnsdeceiver provides a functional interactive shell for real-time operations. No need to perform DNS-spoofing on specified domain? Ok, just restart the utility... ?! NOPE! To avoid an reARPing operation all changes can be done runtime. 
 
 
 ```
@@ -103,26 +103,26 @@ add_arp  close    help  list_arp  list_threads  quit  rm_dns
 #### Commands
 
 `normal`
-* `exit` - gracefully shutdown the utility (also `quit`, `q` and `close`). This command shuts down the dnsdeceiver, restores ARP tables (performs reARPing of the network) and removes IP tables config!
-* `norearp [OPT]` where OPT is in (1, 0). Set bit tells the program to perform reARPing of the network right before shutdown. Disabled option quits faster, but incorrect ARP settings are left. 
+* `exit` - gracefully shutdown the utility (also `quit`, `q` and `close`). This command shuts down the dnsdeceiver, restores ARP tables (performs reARPing of the network) and removes IP tables config.
+* `norearp [OPT]` where OPT is in (1, 0). Set bit tells the program to perform the reARPing of the network right before shutdown. Disabled option quits faster, but incorrect ARP settings are left. 
 
 `[arp]`
 
-* `add_arp [IP]` - adding a new target to arpspoofer
-* `rm_arp [IP]` - removing an old target from the arpspoofer
-* `list_arp` - performing ls operation on arp targets (i.e. listing arp targets)
+* `add_arp [IP]` - adding a new target to the arpspoofer
+* `rm_arp [IP]` - removing a target from the arpspoofer
+* `list_arp` - performing the ls operation on arp targets (i.e. listing arp targets)
 
 `[dns]`
 
 * `add_dns [domain]:[IP]` - adding a new domain target
-* `rm_dns [domain]` - removing an old domain target
-* `list_dns` - performing ls operation on dns targets (i.e. listing dns targets)
+* `rm_dns [domain]` - removing a domain target
+* `list_dns` - performing the ls operation on dns targets (i.e. listing dns targets)
 
 `utility` (mostly debugging)
 
-* `list_threads` - list threads run by the utility.
+* `list_threads` - listing threads run by the utility.
 
 ### Standalone ARPspoofer
 
-Script called `arpspoofer.py` may be used as a tool for yet another network attack that uses ARP spoofing. To invoke it, simply call `arpspoofer.py`. Check `-h` for more options.
+Script called `arpspoofer.py` may be used as a tool for another network attack that uses ARP-spoofing. To invoke it, simply call `arpspoofer.py`. Check `-h` for more options.
 
