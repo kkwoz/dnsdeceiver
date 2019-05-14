@@ -28,5 +28,7 @@ RUN python3 -m pip install scapy==2.4.2
 RUN python3 -m pip install netfilterqueue
 
 
-
+ADD . /dnsdeciver
+WORKDIR /dnsdeciver
+CMD ["python3", "dnsdeciver.py"]
 
