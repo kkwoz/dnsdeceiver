@@ -19,11 +19,11 @@ To print the help message simply type `python dnsdeceiver.py -h`
 sudo python dnsdeceiver.py -h
 [sudo] password for $USERNAME: 
 
-        ____  _  _  ___    ____  ____  ___  ____  ____  _  _  ____  ____ 
-       (  _ \( \( )/ __)  (  _ \( ___)/ __)( ___)(_  _)( \/ )( ___)(  _ \
-        )(_) ))  ( \__ \   )(_) ))__)( (__  )__)  _)(_  \  /  )__)  )   /
-       (____/(_)\_)(___/  (____/(____)\___)(____)(____)  \/  (____)(_)\_)
-                                                       by foxtrot_charlie
+   ____  _  _  ___    ____  ____  ___  ____  ____  _  _  ____  ____ 
+  (  _ \( \( )/ __)  (  _ \( ___)/ __)( ___)(_  _)( \/ )( ___)(  _ \
+   )(_) ))  ( \__ \   )(_) ))__)( (__  )__)  _)(_  \  /  )__)  )   /
+  (____/(_)\_)(___/  (____/(____)\___)(____)(____)  \/  (____)(_)\_)
+                                                  by foxtrot_charlie
        
 usage: dnsdeceiver.py [-h] [-f config.toml]
                       [-d [site.pl:evil_site.pl [site.pl:evil_site.pl ...]]]
@@ -83,11 +83,6 @@ The ARP spoofing attack is yet another trivial computer network attack. The atta
 It is achieved by sending fake ARP responses (not requested!) to the network. Incomming information will be used to overwrite nonstatic entry in the ARP table. In other words: the attackers tells the victiom "Hi, my name is YourRouter". And the gateway gets very similar message "Hi there, my name is Victim".   
 Of course by filling corresponding fields in the ARP packet. 
 
-
-Asciiart graph (coz everything with asciiart has more awesome phrack-like experience!) 
-```
-
-``` 
 
 ### Commandline interface
 
