@@ -30,6 +30,12 @@ INTERVAL = 10
 # global variable
 counter = 0
 
+# _iptablesr_ = "iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE --queue-num 1"
+# _iptablesr_ =  "iptables -I FORWARD -j NFQUEUE --queue-num 1"
+_iptablesr_ = "iptables -I FORWARD -d 192.168.88.0/24 -j NFQUEUE --queue-num 1"
+# _iptablesr_ = "iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE --queue-num 1"
+_iptablesrm_ = "iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X"
+
 
 class ARPspoofer(threading.Thread):
     """
@@ -60,13 +66,24 @@ class ARPspoofer(threading.Thread):
             logger.error("Run me as root!")
             sys.exit(-1)
 
+        self.__config_load(config)
         logger.warning("Used kernel ipv4 forwarding feature.")
 
         os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
 
         logger.info("Kernel IPv4 forwarding enabled")
 
-        self.__config_load(config)
+        iptablesr = _iptablesr_.format(self.network)
+
+        logger.debug('Inserting iptables rules: {}'.format(iptablesr))
+        try:
+            os.system(iptablesr)
+        except OSError:
+            logger.critical('Cannot execute iptables rules!')
+            sys.exit(-1)
+
+        logger.debug('iptables rules inserted!')
+
 
     def __config_load(self, config={}):
         """
@@ -125,7 +142,7 @@ class ARPspoofer(threading.Thread):
         self.iface = config['iface']
         self.iface_mac = utils.getHwAddr(self.iface)
 
-    def rearp(self):
+    def rearping(self):
         """
         reARPing method restores correct ARP settings used by target hosts. Messages are sent multiple times to ensure
         that changes are spotted and applied in ARP tables
@@ -295,12 +312,22 @@ class ARPspoofer(threading.Thread):
         finally:
             print("arpspoofer exiting!")
 
-        print("reARPing the network!")
-        logger.debug('reARPing the network')
+        if self.rearp:
+            print("reARPing the network!")
+            logger.debug('reARPing the network')
 
-        self.rearp()
+            self.rearping()
 
-        logger.debug('reARPing finished!')
+            logger.debug('reARPing finished!')
+
+        iptablesrm = _iptablesrm_.format(self.network)
+        try:
+            logger.debug('Reverting iptables rules!')
+            os.system(iptablesrm)
+            logger.debug('Rules reverted!')
+        except OSError:
+            logger.critical('Cannot revert iptables rules!')
+            sys.exit(-1)
 
     def run(self):
         """

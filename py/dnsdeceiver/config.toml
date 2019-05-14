@@ -6,11 +6,11 @@ network = '192.168.88.0/24'
 [dns]
     [dns.target]
     "foxtrotlabs.cc" = "192.168.88.253"
-    "gynvael.coldwind.pl" = "192.168.88.253"
-    "wp.pl" = "192.168.88.253"
+    "gynvael.coldwind.pl" = "192.168.88.250"
+    "wp.pl" = "192.168.88.247"
 
 [attack]
 interface = "wlp3s0"
-rearp = true
+norearp = false
 rearp = 10
 interval = 10

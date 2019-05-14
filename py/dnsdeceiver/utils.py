@@ -84,10 +84,8 @@ class ConfigParser():
         :return:
         """
         toml_file = None
-        conf = {}
         with open(fn, 'r') as f:
             toml_file = toml.loads(f.read())
-
 
         return toml_file
 
