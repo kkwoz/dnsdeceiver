@@ -215,6 +215,7 @@ class DNSDeceiver_shell(cmd.Cmd):
             self.arpspoofer.join()
         except RuntimeError:
             pass
+
         logger.info("ARPspoofer joined!")
         sys.exit(-1)
 
@@ -238,6 +239,11 @@ if __name__ == '__main__':
         '-a', '--arp',
         help="List of IP addresses (comma-separated) to be attacked via ARP spoofing (0.0.0.0 for whole network)",
         default="0.0.0.0", nargs='*', metavar="IP"
+    )
+    ap.add_argument(
+        '-nr', '--no-rearp',
+        help='Switch of reARPing of the network (quits faster and may break connections)',
+        action='store_false'
     )
 
 

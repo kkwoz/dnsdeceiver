@@ -1,15 +1,16 @@
 [arp]
-target = ["192.168.0.19"]
-gateway = "192.168.0.1"
-network = '192.168.0.0/24'
+target = ["192.168.88.252"]
+gateway = "192.168.88.1"
+network = '192.168.88.0/24'
 
 [dns]
     [dns.target]
-    "foxtrotlabs.cc" = "192.168.0.15"
-    "gynvael.coldwind.pl" = "192.168.0.15"
-    "wp.pl" = "192.168.0.15"
+    "foxtrotlabs.cc" = "192.168.88.253"
+    "gynvael.coldwind.pl" = "192.168.88.253"
+    "wp.pl" = "192.168.88.253"
 
 [attack]
 interface = "wlp3s0"
+rearp = true
 rearp = 10
 interval = 10

